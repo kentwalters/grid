@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html style="height: 100%;">
+<head>
+    <title>Page Title</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #grid {
+            position: relative;
+            color: grey;
+            width: 100%;
+            height: 100%;
+        }
+
+        .line {
+            position: absolute;
+            background-color: rgb(243, 243, 243);
+        }
+
+        .horizontal {
+            height: 1px;
+            width: 100%;
+        }
+
+        .vertical {
+            width: 1px;
+            height: 100%;
+        }
+
+        .dot {
+            position: absolute;
+            background-color: black;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <div id="grid">
+        <div id="dot-container"></div> <!-- New container for dots -->
+    </div>
+
+    <script>
+        const GRID_DIMENSION = 20;
+        saveGridDimension()
+        const dotSize = GRID_DIMENSION - 2;
+        const dotOffset = dotSize / 2;
+        const grid = document.getElementById('grid');
+        const gridRows = Math.floor(grid.offsetHeight / GRID_DIMENSION);
+        const gridCols = Math.floor(grid.offsetWidth / GRID_DIMENSION);
+        let gridState = new Array(gridRows).fill(null).map(() => new Array(gridCols).fill(false));
+        const dotContainer = document.getElementById('dot-container');
+
+        function saveGridState() {
+            localStorage.setItem('gridState', JSON.stringify(gridState));
+            saveGridDimension(); // Save GRID_DIMENSION alongside the grid state
+        }
+
+        function saveGridDimension() {
+            localStorage.setItem('gridDimension', GRID_DIMENSION.toString());
+        }
+
+        function loadGridDimension() {
+            const savedDimension = parseInt(localStorage.getItem('gridDimension'));
+            if (savedDimension && savedDimension !== GRID_DIMENSION) {
+                GRID_DIMENSION = savedDimension;
+                adjustGridSize();
+            }
+        }
+
+        // Adjust the gridRows and gridCols based on the current GRID_DIMENSION
+        function adjustGridSize() {
+            gridRows = Math.floor(grid.offsetHeight / GRID_DIMENSION);
+            gridCols = Math.floor(grid.offsetWidth / GRID_DIMENSION);
+            initializeGridState();
+        }
+
+        function initializeGridState() {
+            gridState = new Array(gridRows).fill(null).map(() => new Array(gridCols).fill(false));
+            updateGridFromState(); // Update the grid display based on the new state
+        }
+
+        function loadGridState() {
+            const savedState = JSON.parse(localStorage.getItem('gridState'));
+            if (savedState && savedState.length === gridRows && savedState[0].length === gridCols) {
+                gridState = savedState;
+            } else {
+                initializeGridState(); // Initialize grid state if there's no saved state or dimension mismatch
+            }
+            updateGridFromState();
+        }
+
+        function initializeGridState() {
+            gridState = new Array(gridRows).fill(null).map(() => new Array(gridCols).fill(false));
+            // Don't call loadGridState here
+            updateGridFromState(); // Update the grid display based on the new state
+        }
+
+        function loadGridState() {
+            const savedState = JSON.parse(localStorage.getItem('gridState'));
+            if (savedState) {
+                gridState = savedState;
+                updateGridFromState();
+            } else {
+                initializeGridState(); // Initialize grid state if there's no saved state
+            }
+        }
+
+
+        // Function to update the grid based on the state array
+        function updateGridFromState() {
+            dotContainer.innerHTML = ''; // Clear existing dots
+            gridState.forEach((row, rowIndex) => {
+                row.forEach((hasDot, colIndex) => {
+                    if (hasDot) {
+                        const left = colIndex * GRID_DIMENSION + GRID_DIMENSION / 2 - dotOffset + 'px';
+                        const top = rowIndex * GRID_DIMENSION + GRID_DIMENSION / 2 - dotOffset + 'px';
+                        createDot(left, top);
+                    }
+                });
+            });
+        }
+
+         // Function to create a dot
+         function createDot(left, top) {
+            const dot = document.createElement('div');
+            dot.classList.add('dot');
+            dot.style.left = left;
+            dot.style.top = top;
+            dot.style.width = dotSize + 'px'; // Set width dynamically
+            dot.style.height = dotSize + 'px'; // Set height dynamically
+            dotContainer.appendChild(dot); // Append to dotContainer
+        }
+
+        // Event listener for grid clicks
+        grid.addEventListener('click', function(event) {
+            const x = event.clientX - grid.offsetLeft;
+            const y = event.clientY - grid.offsetTop;
+            const colIndex = Math.floor(x / GRID_DIMENSION);
+            const rowIndex = Math.floor(y / GRID_DIMENSION);
+
+            gridState[rowIndex][colIndex] = !gridState[rowIndex][colIndex];
+            updateGridFromState();
+            saveGridState();
+
+            
+        });
+
+        // Create grid lines
+        for (let y = GRID_DIMENSION; y < grid.offsetHeight; y += GRID_DIMENSION) {
+            let hLine = document.createElement('div');
+            hLine.classList.add('line', 'horizontal');
+            hLine.style.top = y + 'px';
+            grid.appendChild(hLine);
+        }
+
+        for (let x = GRID_DIMENSION; x < grid.offsetWidth; x += GRID_DIMENSION) {
+            let vLine = document.createElement('div');
+            vLine.classList.add('line', 'vertical');
+            vLine.style.left = x + 'px';
+            grid.appendChild(vLine);
+        }
+        
+
+        // Initialize or load the grid on page load
+        loadGridDimension();
+        loadGridState();
+
+    </script>
+</body>
+</html>
